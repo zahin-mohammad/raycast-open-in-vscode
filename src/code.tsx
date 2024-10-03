@@ -1,8 +1,12 @@
-import { ActionPanel, List, getPreferenceValues, Detail, Action, Cache } from "@raycast/api";
+import { ActionPanel, List, getPreferenceValues, Detail, Action, Cache, closeMainWindow } from "@raycast/api";
 import { existsSync, lstatSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { homedir } from "node:os";
 import { useEffect, useState } from "react";
+import { execFile } from "child_process";
+import { promisify } from "util";
+
+const execFilePromise = promisify(execFile);
 
 type FileType = "directory" | "file" | "other";
 
@@ -21,10 +25,25 @@ type PreferencesType = {
 
 const cache = new Cache();
 
+const invalidPaths = [
+  `${homedir()}/.Trash`,
+  `${homedir()}/Library`,
+  `${homedir()}/Pictures`,
+]
 function getStartDirectory(): string {
   let { startDirectory = "" } = getPreferenceValues<PreferencesType>();
   startDirectory = startDirectory.replace("~", homedir());
   return resolve(startDirectory);
+}
+
+async function openFolderInVSCode(folderPath: string) {
+  try {
+    await execFilePromise("open", ["-a", "Visual Studio Code", folderPath]);
+  } catch (error) {
+    console.error("Failed to open folder in VS Code:", error);
+    // Handle the error appropriately
+  }
+  await closeMainWindow();
 }
 
 function DirectoryItem(props: { fileData: FileDataType }) {
@@ -38,7 +57,7 @@ function DirectoryItem(props: { fileData: FileDataType }) {
       icon={{ fileIcon: filePath }}
       actions={
         <ActionPanel>
-          <Action.Open application={codeAppName} target={filePath} title={`Open in ${codeAppName}`} />
+          <Action onAction={() => openFolderInVSCode(filePath)} title={`Open in ${codeAppName}`} />
           <Action.ShowInFinder path={filePath} />
           <Action.CopyToClipboard
             title="Copy Directory Path"
@@ -52,6 +71,9 @@ function DirectoryItem(props: { fileData: FileDataType }) {
 }
 
 function getDirectoryData(path: string): FileDataType[] {
+  if (invalidPaths.some((p) => path.includes(p))) {
+    return [];
+  }
   const files: string[] = readdirSync(path);
   const data: FileDataType[] = [];
 
@@ -88,7 +110,7 @@ function recursivelyGatherProjects(
   }
 
   // stop if we're beyond the current level
-  if (currentLevel > maxLevels) {
+  if (currentLevel > Number(maxLevels)) {
     console.log("past max levels for", parentDir?.name);
     return files;
   }
@@ -103,7 +125,7 @@ function recursivelyGatherProjects(
 }
 
 function Directory(props: { path: string }) {
-  if (!existsSync(props.path)) {
+  if (props.path !== homedir() && !existsSync(props.path)) {
     return <Detail markdown={`# Error: \n\nThe directory \`${props.path}\` does not exist. `} />;
   }
 
