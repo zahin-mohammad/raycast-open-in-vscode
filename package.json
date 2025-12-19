@@ -1,16 +1,16 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "open-in-vscode",
-  "title": "Open in VSCode",
-  "description": "Returns a list of code projects to open in Visual Studio Code",
+  "title": "Open in Editor",
+  "description": "Returns a list of code projects to open in the editor",
   "icon": "command-icon.png",
   "author": "danphilibin",
   "license": "MIT",
   "commands": [
     {
       "name": "code",
-      "title": "code",
-      "description": "Open the selected directory in Visual Studio Code.",
+      "title": "Code",
+      "description": "Open the selected directory in the Editor.",
       "mode": "view"
     }
   ],
@@ -28,8 +28,33 @@
       "type": "textfield",
       "default": "node_modules, package.json, requirements.txt, .gitignore",
       "required": true,
-      "title": "Project hints",
-      "description": "Only folders containing one of these files will be included."
+      "title": "Project hints (Legacy)",
+      "description": "Legacy setting. Use 'Root Project Hints' and 'Package Hints' for better monorepo support."
+    },
+    {
+      "name": "rootProjectHints",
+      "type": "textfield",
+      "default": ".git, .gitignore, .hg",
+      "required": true,
+      "title": "Root project hints",
+      "description": "Files/folders that indicate a project root (like monorepo root). Search continues for packages within."
+    },
+    {
+      "name": "packageHints",
+      "type": "textfield",
+      "default": "package.json, Cargo.toml, go.mod, requirements.txt, pom.xml, build.gradle",
+      "required": true,
+      "title": "Package hints",
+      "description": "Files that indicate individual packages or subprojects within a monorepo."
+    },
+    {
+      "name": "showMonorepoRoot",
+      "type": "checkbox",
+      "default": true,
+      "required": false,
+      "title": "Show monorepo root",
+      "label": "Include monorepo root directories",
+      "description": "Include monorepo root directories in the results along with individual packages."
     },
     {
       "name": "maxLevels",
@@ -42,7 +67,7 @@
     {
       "name": "codeAppName",
       "type": "textfield",
-      "default": "Visual Studio Code",
+      "default": "Cursor",
       "required": true,
       "title": "'Open With' application name'",
       "description": "Projects will be opened with this application."
